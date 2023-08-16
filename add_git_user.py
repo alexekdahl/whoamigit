@@ -9,17 +9,27 @@ def find_git_config():
         return git_config_path
     return None
 
-def extract_user_name(content):
-    """Extract user name from .git/config content if exists."""
-    user_match = re.search(r'\[user\].*?name\s*=\s*(\S+)', content, re.DOTALL)
-    return user_match.group(1) if user_match else None
+def extract_user_details(content):
+    """Extract user name and email from .git/config content if exists."""
+    user_name_match = re.search(r'name\s*=\s*(.+)', content)
+    user_email_match = re.search(r'email\s*=\s*([\S@.]+)', content)
 
-def add_user_info_to_config(git_config_path, user_info):
-    """Prepend the given user info to the .git/config file."""
-    with open(git_config_path, 'r+') as file:
+    user_name = user_name_match.group(1).strip() if user_name_match else None
+    user_email = user_email_match.group(1).strip() if user_email_match else None
+
+    return user_name, user_email
+
+def override_user_info_in_config(git_config_path, new_name, new_email):
+    """Override the existing user info in the .git/config file."""
+    with open(git_config_path, 'r') as file:
         content = file.read()
-        file.seek(0)
-        file.write(user_info + content)
+
+    # Replace the existing user details
+    content = re.sub(r'name\s*=\s*.+', f'name = {new_name}', content)
+    content = re.sub(r'email\s*=\s*[\S@.]+', f'email = {new_email}', content)
+
+    with open(git_config_path, 'w') as file:
+        file.write(content)
 
 def main():
     git_config_path = find_git_config()
@@ -31,17 +41,20 @@ def main():
     with open(git_config_path, 'r') as file:
         content = file.read()
 
-    user_name = extract_user_name(content)
+    user_name, user_email = extract_user_details(content)
 
-    if user_name:
+    if user_name and user_email:
         print(f"Existing user name: {user_name}")
-        return
+        print(f"Existing user email: {user_email}")
+        answer = input("Do you want to override the existing user details? (yes/no): ")
+        if answer.lower() not in ["yes", "y"]:
+            return
 
-    user_info = """[user]
-name = AlexEkdahl
-email = 77007088+AlexEkdahl@users.noreply.github.com
-"""
-    add_user_info_to_config(git_config_path, user_info)
+    new_name = "AlexEkdahl"
+    new_email = "77007088+AlexEkdahl@users.noreply.github.com"
+
+    override_user_info_in_config(git_config_path, new_name, new_email)
+    print("User details overridden successfully!")
 
 if __name__ == "__main__":
     main()
