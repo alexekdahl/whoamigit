@@ -33,19 +33,21 @@ class GitConfigHandler:
         return user_name, user_email
 
     def override_user_info_in_config(self, new_name, new_email):
-        """Override the existing user info in the .git/config file."""
+        """Override the existing user info or insert new info in the .git/config file."""
         content = self._get_content()
 
-        # Replace the existing user details
-        content = re.sub(r'name\s*=\s*.+', f'name = {new_name}', content)
-        content = re.sub(r'email\s*=\s*[\S@.]+', f'email = {new_email}', content)
+        # Check if user details exist
+        if re.search(r'name\s*=\s*.+', content) and re.search(r'email\s*=\s*[\S@.]+', content):
+            content = re.sub(r'name\s*=\s*.+', f'name = {new_name}', content)
+            content = re.sub(r'email\s*=\s*[\S@.]+', f'email = {new_email}', content)
+        else:  # If not, append user details
+            content += f"\n[user]\n\tname = {new_name}\n\temail = {new_email}\n"
 
         try:
             with open(self.config_path, 'w') as file:
                 file.write(content)
         except Exception as e:
             raise Exception(f"An error occurred while writing to '{self.config_path}': {str(e)}")
-
 
 def main():
     handler = GitConfigHandler()
@@ -71,7 +73,6 @@ def main():
         print("User details overridden successfully!")
     except Exception as e:
         print(f"Error: {str(e)}")
-
 
 if __name__ == "__main__":
     main()
