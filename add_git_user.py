@@ -31,7 +31,6 @@ def main():
 
     # Check if answers is None (user canceled the prompt)
     if answers is None:
-        print("Operation canceled by user.")
         return
 
     if answers['user'] == 'Personal':
